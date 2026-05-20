@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>客户管理页面</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --primary: #2f6fed;
+      --danger: #dc3545;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .form-area {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #fff;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    .add-btn {
+      height: 40px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .table-wrap {
+      padding: 12px 24px 24px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    th { color: var(--muted); font-weight: 600; }
+
+    .status-pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      display: inline-block;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .delete-btn {
+      border: none;
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 30px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>客户管理</h1>
+    </div>
+
+    <form id="customerForm" class="form-area">
+      <div>
+        <label for="name">客户姓名</label>
+        <input id="name" type="text" placeholder="例如：张三" required />
+      </div>
+      <div>
+        <label for="phone">手机号</label>
+        <input id="phone" type="tel" placeholder="例如：13800138000" required />
+      </div>
+      <div>
+        <label for="source">来源</label>
+        <select id="source" required>
+          <option value="">请选择来源</option>
+          <option>官网咨询</option>
+          <option>朋友推荐</option>
+          <option>广告投放</option>
+          <option>线下活动</option>
+        </select>
+      </div>
+      <div>
+        <label for="status">跟进状态</label>
+        <select id="status" required>
+          <option value="">请选择状态</option>
+          <option>待跟进</option>
+          <option>已联系</option>
+          <option>已成交</option>
+          <option>已流失</option>
+        </select>
+      </div>
+      <button type="submit" class="add-btn">新增客户</button>
+    </form>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>客户姓名</th>
+            <th>手机号</th>
+            <th>来源</th>
+            <th>跟进状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="customerTableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty">暂无客户，请先新增。</div>
+    </div>
+  </div>
+
+  <script>
+    const customerForm = document.getElementById('customerForm');
+    const customerTableBody = document.getElementById('customerTableBody');
+    const emptyState = document.getElementById('emptyState');
+
+    const customers = [];
+
+    function renderCustomers() {
+      customerTableBody.innerHTML = '';
+
+      if (customers.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      customers.forEach((customer, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${customer.name}</td>
+          <td>${customer.phone}</td>
+          <td>${customer.source}</td>
+          <td><span class="status-pill">${customer.status}</span></td>
+          <td><button class="delete-btn" data-index="${index}">删除</button></td>
+        `;
+        customerTableBody.appendChild(row);
+      });
+    }
+
+    function isValidPhone(phone) {
+      return /^1\d{10}$/.test(phone);
+    }
+
+    customerForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const source = document.getElementById('source').value;
+      const status = document.getElementById('status').value;
+
+      if (!isValidPhone(phone)) {
+        alert('请输入有效的 11 位手机号（以 1 开头）。');
+        return;
+      }
+
+      customers.push({ name, phone, source, status });
+      renderCustomers();
+      customerForm.reset();
+    });
+
+    customerTableBody.addEventListener('click', (event) => {
+      const target = event.target;
+      if (target.classList.contains('delete-btn')) {
+        const index = Number(target.dataset.index);
+        customers.splice(index, 1);
+        renderCustomers();
+      }
+    });
+
+    renderCustomers();
+  </script>
+</body>
+</html>
